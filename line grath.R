@@ -14,7 +14,10 @@ mancrs %>%
   group_by(Crime.type, Month) %>%
   summarise(nCrime = n()) -> mancrsgroup
 
+
+#############################################
 #Line graph-- Over all crimes in timeseries
+##############################################
 mancrsgroup %>%
   group_by(Month) %>%
   summarise(nCrimeintotals = sum(nCrime)) -> crimestimeseries
@@ -39,12 +42,13 @@ ggplot(crimestimeseries, aes(Month, nCrimeintotals)) +
         axis.text.x = element_text(size = 10), axis.ticks.length = unit(.25, "cm"),
         axis.ticks.y = element_blank(),
         plot.title = element_text(hjust = 0.5, vjust=2.12, colour="#666666", size = 18),
-        axis.title.y = element_text(size = 14, colour = "#666666")) -> c1
+        axis.title.y = element_text(size = 14, colour = "#666666")) 
 
 
 
-
-#umemployment rate and Overall Crimes line graphs by quarterly
+#################################################################
+#umemployment rate by quarterly
+#################################################################
 library(dtplyr)
 library(ggplot2)
 library(grid)
@@ -52,6 +56,8 @@ uneply <- fread("unemploy_rate_ of_manchester.csv")
 uneply$Month <- as.yearmon(uneply$Month, "%b-%y") #change to date type
 uneply$Month <- as.Date(uneply$Month)
 
+
+# umeployment rate displays in quarterly  
 ggplot(uneply, aes(Month, umeply_rate)) + 
   geom_line(colour = "#FF6666", size = 1.5) + scale_x_date(labels = date_format("%Y-%m"), breaks = date_breaks("4 month")) + 
   theme(axis.text.x = element_text(size=9)) + xlab(" ") + 
@@ -64,23 +70,45 @@ ggplot(uneply, aes(Month, umeply_rate)) +
         axis.text.x = element_text(size = 10), axis.ticks.length = unit(.25, "cm"),
         axis.ticks.y = element_blank(),
         plot.title = element_text(hjust = 0.5, vjust=2.12, colour="#666666", size = 18),
-        axis.title.y = element_text(size = 14, colour = "#666666")) -> u1
+        axis.title.y = element_text(size = 14, colour = "#666666"))
 
 
-ggplot(uneply, aes(Month, umeply_rate)) + 
-  geom_line() + scale_x_date(labels = date_format("%b%y"), breaks = date_breaks("4 month")) + 
-  theme(axis.text.x = element_text(size=9)) + xlab(" ") + 
-  ylab("Unemployment Rate") +  
-  ggtitle("Crimes and unemployment in Manchester by quarterly") + 
-  theme(plot.title = element_text(hjust = 0.5)) -> plot1
+#ggplot(uneply, aes(Month, umeply_rate)) + 
+#  geom_line() + scale_x_date(labels = date_format("%b%y"), breaks = date_breaks("4 month")) + 
+#  theme(axis.text.x = element_text(size=9)) + xlab(" ") + 
+#  ylab("Unemployment Rate") +  
+# ggtitle("Crimes and unemployment in Manchester by quarterly") + 
+#  theme(plot.title = element_text(hjust = 0.5)) 
 
+
+##################################################################
+#transfer the Overall Crimes into quarlterly
+##################################################################
+library(stringr)
+library(tidyr)
+crimes_quarterly <- fread("crimes_quarterly.csv")
+crimes_quarterly_cls <- separate(crimes_quarterly, Month, c("Year", "Month"))
+crimes_quarterly_cls %>%
+  select(Year, Quarter, nCrimeintotals) %>%
+  group_by(Year, Quarter) %>%
+  summarise(nCrimequaterly = sum(nCrimeintotals)) -> crimes_qualt
+
+#create a seq for quarter for each year 
+Q <- c("Mar", "Jun", "Sep", "Nov" , "Mar", "Jun", "Sep", "Nov" , "Mar", "Jun", "Sep", "Nov" , "Mar", "Jun", "Sep", "Nov" , "Mar", "Jun", "Sep", "Nov" , "Mar", "Jun", "Sep", "Nov")
+crimes_qualt$Qua <- Q
+crimes_qualt_plt <- unite(crimes_qualt, Year_qualt, Year, Qua, sep = "-")
+
+crimes_qualt_plt$Year_qualt <- as.yearmon(crimes_qualt_plt$Year_qualt, "%Y-%b")
+crimes_qualt_plt$Year_qualt <- as.Date(crimes_qualt_plt$Year_qualt)
+
+# plot totals crimes by quartely
 ggplot(crimes_qualt_plt, aes(Year_qualt, nCrimequaterly)) +
   geom_line() + scale_x_date(labels = date_format("%b%y"), breaks = date_breaks("4 month")) + 
   theme(axis.text.x = element_text(size=9)) + xlab(" ") + 
   ylab("Number of Total Crimes") +  
   ggtitle("Crimes and unemployment in Manchester by quarterly") + 
-  theme(plot.title = element_text(hjust = 0.5)) -> plot2
-###################################################
+  theme(plot.title = element_text(hjust = 0.5))
+
 #install.packages("gtable")
 library(gtable)
 ggplot(uneply, aes(Month, umeply_rate)) + 
@@ -145,36 +173,10 @@ g$grobs[[8]]$children$GRID.text.1767$gp$col <- c("#FF6666","#00A4E6")
 g$grobs[[8]]$children$GRID.text.1767$x <- unit(c(1.2, 2.12), "npc")
 grid.draw(g)
 
-#################
 
-
-#transfer the Overall Crimes into quarlterly  
-library(stringr)
-library(tidyr)
-crimes_quarterly <- fread("crimes_quarterly.csv")
-crimes_quarterly_cls <- separate(crimes_quarterly, Month, c("Year", "Month"))
-crimes_quarterly_cls %>%
-  select(Year, Quarter, nCrimeintotals) %>%
-  group_by(Year, Quarter) %>%
-  summarise(nCrimequaterly = sum(nCrimeintotals)) -> crimes_qualt
-
-#create a seq for quarter for each year 
-Q <- c("Mar", "Jun", "Sep", "Nov" , "Mar", "Jun", "Sep", "Nov" , "Mar", "Jun", "Sep", "Nov" , "Mar", "Jun", "Sep", "Nov" , "Mar", "Jun", "Sep", "Nov" , "Mar", "Jun", "Sep", "Nov")
-crimes_qualt$Qua <- Q
-crimes_qualt_plt <- unite(crimes_qualt, Year_qualt, Year, Qua, sep = "-")
-
-crimes_qualt_plt$Year_qualt <- as.yearmon(crimes_qualt_plt$Year_qualt, "%Y-%b")
-crimes_qualt_plt$Year_qualt <- as.Date(crimes_qualt_plt$Year_qualt)
-
-library(ggplot2)
-ggplot(crimes_qualt_plt, aes(Year_qualt, nCrimequaterly)) +
-  geom_line() + scale_x_date(labels = date_format("%b%y"), breaks = date_breaks("4 month")) + 
-  theme(axis.text.x = element_text(size=9)) + xlab(" ") + 
-  ylab("Number of Total Crimes") +  
-  ggtitle("Crimes and unemployment in Manchester by quarterly") + 
-  theme(plot.title = element_text(hjust = 0.5))
-
+#############################################################
 #Anti-social behaviour timeseries --Line graph
+##############################################################
 #filter data first 
 mancrsgroup %>%
   filter(str_detect(Crime.type, 'Anti')) %>%
@@ -189,34 +191,16 @@ library(ggplot2)
 library(scales)
 ggplot(ASBtimeseries, aes(Month, nCrime)) + geom_line() + scale_x_date(labels = date_format("%Y-%b"), breaks = date_breaks("4 month")) + theme(axis.text.x = element_text(size=9)) + xlab("Over 6 years") + ylab("Number of ASB") +  ggtitle("Timeseries of Anti-social behaviour in Manchester") + theme(plot.title = element_text(hjust = 0.5))
 
-
+#extract monthly names from files' name 
 #xlab("") + ylab("Number of ASB") +  ggtitle("Timeseries of Anti-social behaviour in Manchester")
 months_lables=list.files(path="~/Desktop/Manchester Crimes/original_files",pattern="*.csv",all.files=TRUE) 
 months_lables<-substr(months_lables, 1, 7)
 
-
-
-#
 #    ggplot(data = dm, aes(Date, Visits)) + 
 #geom_line() + 
 #  scale_x_date(format = "%b %d", major =  "1 day")
-#
-#
 
 
-#October Crime 
-Gmancr1610 <- fread("2016-10-greater-manchester-street.csv")
-library(dplyr)
-library(stringr)
-glimpse(Gmancr1610)
 
-Gmancr1610 %>%
-  select(Month, Longitude, Latitude, `Crime type`, `LSOA name`) %>%   # ` ` used to select the column name which has space
-  rename( Crimetype =`Crime type`, LSOA.name = `LSOA name`) %>%  
-  filter(str_detect(LSOA.name, 'Manchester')) %>%
-  group_by(Crimetype, Month) %>%
-  summarise(nCrime = n()) -> crime1610
-
-sum(crime1610$nCrime)
 
 
